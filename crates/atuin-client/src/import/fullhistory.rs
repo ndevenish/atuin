@@ -26,4 +26,10 @@ impl Importer for FullHistory {
         let bytes = read_to_end(fullhistory_db_path()?)?;
         Ok(Self { bytes })
     }
+
+    async fn entries(&mut self) -> Result<usize> {
+        Ok(super::count_lines(&self.bytes))
+    }
+
+    async fn load(self, h: &mut impl Loader) -> Result<()> {}
 }
