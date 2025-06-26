@@ -34,7 +34,7 @@ impl Importer for FullHistory {
 
     async fn entries(&mut self) -> Result<usize> {
         let counter =
-            Regex::new(r#"(?m)^[a-zA-Z0-9.-]+:"[^"]*" \d+ .*(?!^[a-zA-Z0-9.-]+:"[^"]*" \d+ )"#)
+            Regex::new(r#"(?m)^([a-zA-Z0-9.-]+)(?::"([^"]*)")? (\d+) ([^ ]+) \s*\d*\s*(.*?)(?!^[a-zA-Z0-9.-]+(?::"[^"]*")? \d+ )"#,)
                 .unwrap();
         let count = counter.find_iter(&self.data).count();
         println!("Count: {count}");
@@ -43,16 +43,15 @@ impl Importer for FullHistory {
 
     async fn load(self, h: &mut impl Loader) -> Result<()> {
         let parser = Regex::new(
-            r#"(?m)^([a-zA-Z0-9.-]+):"([^"]*)" (\d+) ([^ ]+) (.*)(?!^[a-zA-Z0-9.-]+:"[^"]*" \d+ )"#,
+            r#"(?m)^([a-zA-Z0-9.-]+)(?::"([^"]*)")? (\d+) ([^ ]+) \s*\d*\s*(.*?)(?!^[a-zA-Z0-9.-]+(?::"[^"]*")? \d+ )"#,
         )
         .unwrap();
         for entry in parser.captures_iter(&self.data).map(|x| x.unwrap()) {
             let hostname = entry.get(1).unwrap().as_str();
-            let cwd = entry.get(2).unwrap().as_str();
             let session = entry.get(3).unwrap().as_str();
             let timestamp = entry.get(4).unwrap().as_str();
             let command = entry.get(5).unwrap().as_str();
-
+            let cwd = entry.get(2).map(|x| x.as_str()).unwrap_or("");
             let Ok(time) = OffsetDateTime::parse(
                 &timestamp,
                 &time::format_description::well_known::Iso8601::DEFAULT,
@@ -61,16 +60,21 @@ impl Importer for FullHistory {
             };
 
             // let x = entry;
-            let hist: History = History::import()
+            let history = History::import()
                 .command(command.trim())
-                .cwd(cwd)
                 .hostname(hostname)
                 .session(session)
                 .timestamp(time)
+                .cwd(cwd)
                 .build()
                 .into();
+            
+            // let history : History = builder.build()
+            //     .into();
+            
+            // .cwd(cwd)
             // println!("{hist:?}");
-            h.push(hist).await.unwrap();
+            h.push(history).await.unwrap();
         }
         Ok(())
     }
