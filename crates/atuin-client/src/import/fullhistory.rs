@@ -43,7 +43,7 @@ impl Importer for FullHistory {
 
     async fn load(self, h: &mut impl Loader) -> Result<()> {
         let parser = Regex::new(
-            r#"(?m)^([a-zA-Z0-9.-]+)(?::"([^"]*)")? (\d+) ([^ ]+) \s*\d*\s*(.*)(?!^[a-zA-Z0-9.-]+(?::"[^"]*")? \d+ )"#,
+            r#"(?m)^([a-zA-Z0-9.-]+)(?::"([^"]*)")? (\d+) (\d\d\d\d-\d\d[^ ]+) \s*\d*\s*(.*)(?!^[a-zA-Z0-9.-]+(?::"[^"]*")? \d+\s+\d\d\d\d-\d\d)"#,
         )
         .unwrap();
         for entry in parser.captures_iter(&self.data).map(|x| x.unwrap()) {
@@ -56,7 +56,7 @@ impl Importer for FullHistory {
                 &timestamp,
                 &time::format_description::well_known::Iso8601::DEFAULT,
             ) else {
-                panic!("Could not parse '{}' as ISO8601", timestamp);
+                panic!("Could not parse '{}' as ISO8601 (Session {session} CWD {cwd})", timestamp);
             };
 
             // let x = entry;
