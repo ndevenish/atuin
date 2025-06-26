@@ -68,11 +68,6 @@ impl Importer for FullHistory {
                 .cwd(cwd)
                 .build()
                 .into();
-            
-            // let history : History = builder.build()
-            //     .into();
-            
-            // .cwd(cwd)
             // println!("{hist:?}");
             h.push(history).await.unwrap();
         }
